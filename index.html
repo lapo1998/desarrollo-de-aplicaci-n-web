@@ -1,83 +1,339 @@
 <!DOCTYPE html>
+
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EcuaCompras - Inicio</title>
+
+
+<!-- Bootstrap CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+    body{
+        background-color:#f8f9fa;
+        font-family:Arial, sans-serif;
+    }
+
+    header{
+        background:linear-gradient(135deg,#198754,#20c997);
+        color:white;
+        padding:20px;
+    }
+
+    .hero{
+        background:white;
+        border-radius:15px;
+        box-shadow:0 4px 10px rgba(0,0,0,.1);
+    }
+
+    .card{
+        transition:0.3s;
+        box-shadow:0 4px 8px rgba(0,0,0,.1);
+    }
+
+    .card:hover{
+        transform:translateY(-5px);
+    }
+
+    aside{
+        background:white;
+        border-radius:10px;
+        box-shadow:0 4px 8px rgba(0,0,0,.1);
+        padding:20px;
+        margin:20px;
+    }
+
+    footer{
+        background:#212529;
+        color:white;
+        text-align:center;
+        padding:15px;
+    }
+
+    iframe{
+        width:100%;
+        max-width:800px;
+    }
+
+    @media(max-width:768px){
+        h1{
+            font-size:1.8rem;
+        }
+
+        iframe{
+            height:250px;
+        }
+    }
+</style>
+
+
 </head>
+
 <body>
-<!--Contiene el titulo principal con h1-->
-    <header>
+
+<header>
+    <div class="container text-center">
         <h1>EcuaCompras: Página para Compras en Línea en Ecuador</h1>
-        <!-- usamos la etiqueta nav para colocar Inicio, Quiénes Somos, Servicios o Productos y Contacto. -->
-        <nav>
-            <ul>
-                <li><a href="#inicio">Inicio</a></li>
-                <li><a href="#quienes-somos">Quiénes Somos</a></li>
-                <li><a href="#servicios-productos">Servicios o Productos</a></li>
-                <li><a href="#contacto">Contacto</a></li>
+    </div>
+
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mt-3">
+    <div class="container">
+
+        <a class="navbar-brand" href="#">EcuaCompras</a>
+
+        <button class="navbar-toggler"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#menu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="menu">
+            <ul class="navbar-nav ms-auto">
+
+                <li class="nav-item">
+                    <a class="nav-link" href="#inicio">Inicio</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="#quienes-somos">Quiénes Somos</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="#servicios-productos">Servicios o Productos</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="#contacto">Contacto</a>
+                </li>
+
             </ul>
-        </nav>
-    </header>
+        </div>
+    </div>
+</nav>
 
-    <main>
 
-        <section id="inicio">
-            <h2>Inicio</h2>
-            <p>Bienvenido a EcuaCompras. Esta plataforma ha sido proyectada para ofrecer una infraestructura robusta y eficiente de comercio electrónico en el país. Buscamos conectar a los comerciantes locales con soluciones tecnológicas modernas, facilitando procesos de pago intuitivos y garantizando una experiencia de navegación óptima para todos los usuarios ecuatorianos.</p>
-        </section>
+</header>
 
-        <section id="quienes-somos">
-            <h2>Quiénes Somos</h2>
+<main>
+
+
+<section id="inicio" class="container hero text-center p-5 m-3">
+
+    <h2>Inicio</h2>
+
+    <p>
+        Bienvenido a EcuaCompras. Esta plataforma ha sido proyectada para ofrecer una infraestructura robusta y eficiente de comercio electrónico en el país. Buscamos conectar a los comerciantes locales con soluciones tecnológicas modernas, facilitando procesos de pago intuitivos y garantizando una experiencia de navegación óptima para todos los usuarios ecuatorianos.
+    </p>
+
+    <a href="#servicios-productos" class="btn btn-success m-2">
+        Ver Productos
+    </a>
+
+    <a href="#contacto" class="btn btn-outline-success m-2">
+        Contacto
+    </a>
+
+</section>
+
+<section id="quienes-somos" class="container p-3">
+
+    <h2 class="text-center mb-4">Quiénes Somos</h2>
+
+    <div class="row align-items-center">
+
+        <div class="col-md-7">
+
             <article>
-            <p>EcuaCompras es una iniciativa tecnológica que surge en el ámbito académico con el propósito firme de dinamizar el comercio digital en las regiones ecuatorianas. El sistema se enfoca en proporcionar un espacio virtual intuitivo, seguro y de alta disponibilidad donde los emprendedores locales puedan exhibir sus catálogos de productos sin barreras técnicas complejas. A través de la implementación de metodologías ágiles de desarrollo de software y una meticulosa planeación en la arquitectura de datos, este proyecto busca optimizar el rendimiento de las transacciones en línea, adaptándose fielmente a las preferencias y necesidades del consumidor actual. Nos esforzamos por promover la inclusión digital, ofreciendo herramientas competitivas que impulsen el crecimiento económico local y demuestren el alto potencial del desarrollo de aplicaciones web en nuestra universidad.
-              </p>
-              
+                <p>
+                    EcuaCompras es una iniciativa tecnológica que surge en el ámbito académico con el propósito firme de dinamizar el comercio digital en las regiones ecuatorianas. El sistema se enfoca en proporcionar un espacio virtual intuitivo, seguro y de alta disponibilidad donde los emprendedores locales puedan exhibir sus catálogos de productos sin barreras técnicas complejas. A través de la implementación de metodologías ágiles de desarrollo de software y una meticulosa planeación en la arquitectura de datos, este proyecto busca optimizar el rendimiento de las transacciones en línea, adaptándose fielmente a las preferencias y necesidades del consumidor actual. Nos esforzamos por promover la inclusión digital, ofreciendo herramientas competitivas que impulsen el crecimiento económico local y demuestren el alto potencial del desarrollo de aplicaciones web en nuestra universidad.
+                </p>
             </article>
-            
-            <img src="ecuacompras-logo.png" alt="Mercado local impulsado por ecuacompras" width="600">
-        </section>
 
-        <section id="servicios-productos">
-            <h2>Servicios y Productos</h2>
-            <ul>
-                <li><strong>Catálogo Web Dinámico:</strong> Una amplia variedad de productos locales de la línea hogar y emprendimientos listos para ti.</li>
-                <li><strong>Procesamiento de Pagos:</strong> La opción de realizar tus compras y pagos de forma rápida, directa y totalmente segura.</li>
-                <li><strong>Panel de Gestión:</strong> Atención personalizada para guiarte en cada paso de tu experiencia de compra.</li>
-            </ul></section>
+        </div>
 
-        <!-- usamos la etiqueta (a) para colocar informacióm como correo, teléfono, dirección y redes sociales -->
-        <section id="contacto">
-            <h2>Contacto</h2>
-            <p>Correo electrónico: <a href="mailto:soporte@ecuacompras.com">soporte@ecuacompras.com</a></p>
-            <p>Teléfono: +593 0979795604</p>
-            <p>Dirección: Loja-cariamanga-servicios en linea</p>
-            <p>Redes Sociales:</p>
+        <div class="col-md-5 text-center">
 
-           <ul>
-                <li><a href="https://www.facebook.com/profile.php?id=61568956269010" target="_blank">Facebook</a></li>
-                <li><a href="https://www.tiktok.com/@ecuacompras" target="_blank">TikTok</a></li>
-            </ul>
-        </section>
+            <img src="ecuacompras-logo.png"
+                 alt="Mercado local impulsado por ecuacompras"
+                 class="img-fluid rounded shadow">
 
-       <section id="video-seccion">
-            <h2>Video Informativo</h2>
-            <iframe width="560" height="315" src="https://www.youtube.com/embed/kTAXXebEP-w" title="CATÁLOGO DE PRODUCTOS ECUACOMPRA LINEA HOGAR" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-        </section>
+        </div>
 
-    </main> 
-    
-    <aside>
-        <h3>Información Relevante</h3> 
-        <p><strong>Promociones:</strong> ¡Regístrate este mes como vendedor en EcuaCompras y quédate con el 100% de tus ganancias en tus primeras 50 ventas!</p>
-        <p><strong>Horarios de Atención:</strong> whatsapp Lunes a sabados de 08:00 a 17:00</p>
-    </aside>
+    </div>
 
-    <footer>
-        <p><strong>Estudiante</strong> Elvio Manuel Lapo Agreda</p>
-        <p><strong>Asignatura</strong> Desarrollo de Aplicaciones Web</p>
-        <p><strong>Año</strong>: 2026</p>
-    </footer>
+</section>
+
+<section id="servicios-productos" class="container p-3">
+
+    <h2 class="text-center mb-4">Servicios y Productos</h2>
+
+    <div class="row">
+
+        <div class="col-md-4 mb-3">
+
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Catálogo Web Dinámico</h5>
+                    <p class="card-text">
+                        Una amplia variedad de productos locales de la línea hogar y emprendimientos listos para ti.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="col-md-4 mb-3">
+
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Procesamiento de Pagos</h5>
+                    <p class="card-text">
+                        La opción de realizar tus compras y pagos de forma rápida, directa y totalmente segura.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="col-md-4 mb-3">
+
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Panel de Gestión</h5>
+                    <p class="card-text">
+                        Atención personalizada para guiarte en cada paso de tu experiencia de compra.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<section id="contacto" class="container p-3">
+
+    <h2 class="text-center mb-4">Contacto</h2>
+
+    <div class="row">
+
+        <div class="col-md-6">
+
+            <form>
+
+                <div class="mb-3">
+                    <label class="form-label">Nombre</label>
+                    <input type="text" class="form-control">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Correo Electrónico</label>
+                    <input type="email" class="form-control">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Asunto</label>
+                    <input type="text" class="form-control">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Mensaje</label>
+                    <textarea class="form-control" rows="4"></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-success">
+                    Enviar Mensaje
+                </button>
+
+            </form>
+
+        </div>
+
+        <div class="col-md-6">
+
+            <p>
+                <a href="mailto:soporte@ecuacompras.com" class="btn btn-primary m-1">
+                    Correo Electrónico
+                </a>
+            </p>
+
+            <p><strong>Teléfono:</strong> +593 0979795604</p>
+
+            <p><strong>Dirección:</strong> Loja-cariamanga-servicios en linea</p>
+
+            <p><strong>Redes Sociales:</strong></p>
+
+            <a href="https://www.facebook.com/profile.php?id=61568956269010"
+               target="_blank"
+               class="btn btn-primary m-1">
+                Facebook
+            </a>
+
+            <a href="https://www.tiktok.com/@ecuacompras"
+               target="_blank"
+               class="btn btn-dark m-1">
+                TikTok
+            </a>
+
+        </div>
+
+    </div>
+
+</section>
+
+<section id="video-seccion" class="container text-center p-3">
+
+    <h2>Video Informativo</h2>
+
+    <iframe
+        height="450"
+        src="https://www.youtube.com/embed/kTAXXebEP-w"
+        title="CATÁLOGO DE PRODUCTOS ECUACOMPRA LINEA HOGAR"
+        frameborder="0"
+        allowfullscreen>
+    </iframe>
+
+</section>
+```
+
+</main>
+
+<aside class="container">
+
+
+<h3>Información Relevante</h3>
+
+<p>
+    <strong>Promociones:</strong>
+    ¡Regístrate este mes como vendedor en EcuaCompras y quédate con el 100% de tus ganancias en tus primeras 50 ventas!
+</p>
+
+<p>
+    <strong>Horarios de Atención:</strong>
+    WhatsApp lunes a sábados de 08:00 a 17:00
+</p>
+```
+
+</aside>
+
+<footer>
+
+
+<p><strong>Estudiante:</strong> Elvio Manuel Lapo Agreda</p>
+
+<p><strong>Asignatura:</strong> Desarrollo de Aplicaciones Web</p>
+
+<p><strong>Año:</strong> 2026</p>
+
+
+</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 </html>
