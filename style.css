@@ -1,0 +1,65 @@
+/* Estilos generales de la página */
+body {
+    background-color: #f8f9fa;
+    font-family: Arial, sans-serif;
+}
+
+/* Diseño del encabezado principal */
+header {
+    background: linear-gradient(135deg, #198754, #20c997);
+    color: white;
+    padding: 20px;
+}
+
+/* Estilos de la sección de inicio */
+.hero {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, .1);
+}
+
+/* Efecto visual para las tarjetas de servicios */
+.card {
+    transition: 0.3s;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, .1);
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+/* Diseño de la información adicional */
+aside {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, .1);
+    padding: 20px;
+    margin: 20px;
+}
+
+footer {
+    background: #212529;
+    color: white;
+    text-align: center;
+    padding: 15px;
+}
+
+iframe {
+    width: 100%;
+    max-width: 800px;
+}
+
+@media (max-width: 768px) {
+    h1 {
+        font-size: 1.8rem;
+    }
+
+    iframe {
+        height: 250px;
+    }
+}
+
+/* Tarjetas de registros generados dinámicamente */
+.tarjeta-registro {
+    border-left: 4px solid #198754;
+}
