@@ -21,7 +21,12 @@ const feedbackDescripcion = document.getElementById("feedback-descripcion");
 const LONGITUD_MINIMA_NOMBRE = 3;
 const LONGITUD_MINIMA_DESCRIPCION = 15;
 
-let contador = 0;
+// Referencia al mensaje de "no hay registros"
+const estadoVacio = document.getElementById("estadoVacio");
+
+// Array que guarda TODOS los registros. Es la única "fuente de verdad":
+// cada vez que cambia, volvemos a dibujar la lista completa a partir de él.
+let registros = [];
 
 
 // Marca un campo como válido o inválido.
@@ -128,38 +133,56 @@ function mostrarMensajeError(texto) {
     mensaje.innerHTML = `<div class="alert alert-danger">${texto}</div>`;
 }
 
-// Manejo de registros (crear, contar, eliminar)
+// Manejo de registros (crear, listar, eliminar)
+
+// Contador de IDs únicos para poder identificar cada registro al eliminarlo
+let siguienteId = 1;
+
 function actualizarContador() {
-    total.textContent = contador;
+    total.textContent = registros.length;
 }
 
-function crearTarjetaRegistro(nombre, correo, categoria, descripcion) {
+// Crea el HTML (tarjeta) de UN solo registro. Esta es la "plantilla" que se
+// reutiliza dentro del bucle, para no repetir bloques HTML manualmente.
+function crearElementoTarjeta(registro) {
+    const columna = document.createElement("div");
+    columna.className = "col-md-6";
+
     const tarjeta = document.createElement("div");
-    tarjeta.className = "card tarjeta-registro p-3 mt-3 shadow";
+    tarjeta.className = "card tarjeta-registro p-3 mt-3 shadow-sm";
 
     const titulo = document.createElement("h5");
-    titulo.textContent = nombre;
+    titulo.textContent = registro.nombre;
 
     const correoTexto = document.createElement("p");
+    correoTexto.className = "mb-1";
     correoTexto.innerHTML = "<strong>Correo:</strong> ";
-    correoTexto.append(correo);
+    correoTexto.append(registro.correo);
 
     const tipo = document.createElement("p");
+    tipo.className = "mb-1";
     tipo.innerHTML = "<strong>Categoría:</strong> ";
-    tipo.append(categoria);
+    const insignia = document.createElement("span");
+    insignia.className = "badge bg-success";
+    insignia.textContent = registro.categoria;
+    tipo.appendChild(insignia);
 
     const texto = document.createElement("p");
-    texto.textContent = descripcion;
+    texto.className = "mt-2";
+    texto.textContent = registro.descripcion;
 
     const boton = document.createElement("button");
     boton.textContent = "Eliminar";
     boton.type = "button";
     boton.className = "btn btn-danger btn-sm";
 
+    // Al eliminar, quitamos el registro del array (por su id único)
+    // y volvemos a renderizar todo, en lugar de tocar el DOM "a mano".
     boton.addEventListener("click", function () {
-        tarjeta.remove();
-        contador--;
-        actualizarContador();
+        registros = registros.filter(function (r) {
+            return r.id !== registro.id;
+        });
+        renderizarRegistros();
     });
 
     tarjeta.appendChild(titulo);
@@ -167,10 +190,33 @@ function crearTarjetaRegistro(nombre, correo, categoria, descripcion) {
     tarjeta.appendChild(tipo);
     tarjeta.appendChild(texto);
     tarjeta.appendChild(boton);
+    columna.appendChild(tarjeta);
 
-    listaRegistros.appendChild(tarjeta);
+    return columna;
+}
 
-    contador++;
+// recorre el array "registros" con forEach y
+// construye la lista completa de tarjetas a partir de él.
+// Además aplica una CONDICIÓN según el estado de los datos:
+// si no hay registros, muestra un mensaje; si hay, muestra la lista.
+function renderizarRegistros() {
+    listaRegistros.innerHTML = "";
+
+    if (registros.length === 0) {
+        // Condición: no hay datos -> mostramos mensaje de estado vacío
+        estadoVacio.classList.remove("d-none");
+        listaRegistros.classList.add("d-none");
+    } else {
+        // Condición: sí hay datos -> ocultamos el mensaje y pintamos la lista
+        estadoVacio.classList.add("d-none");
+        listaRegistros.classList.remove("d-none");
+
+        registros.forEach(function (registro) {
+            const elemento = crearElementoTarjeta(registro);
+            listaRegistros.appendChild(elemento);
+        });
+    }
+
     actualizarContador();
 }
 
@@ -215,7 +261,22 @@ formulario.addEventListener("submit", function (event) {
     const categoria = campoCategoria.value;
     const descripcion = campoDescripcion.value.trim();
 
-    crearTarjetaRegistro(nombre, correo, categoria, descripcion);
+    // Guardamos el nuevo registro en el array (fuente de datos)
+    registros.push({
+        id: siguienteId++,
+        nombre: nombre,
+        correo: correo,
+        categoria: categoria,
+        descripcion: descripcion
+    });
+
+    // Volvemos a dibujar toda la lista a partir del array actualizado
+    renderizarRegistros();
+
     mostrarMensajeExito("Registro agregado correctamente.");
     limpiarFormulario();
 });
+
+// Renderizado inicial al cargar la página (con el array vacío,
+// esto mostrará el mensaje de "no hay registros")
+renderizarRegistros();
