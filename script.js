@@ -24,6 +24,26 @@ const LONGITUD_MINIMA_DESCRIPCION = 15;
 // Referencia al mensaje de "no hay registros"
 const estadoVacio = document.getElementById("estadoVacio");
 
+// Elementos para el botón de envío con spinner
+const btnEnviar = document.getElementById("btnEnviar");
+const spinnerEnviar = document.getElementById("spinnerEnviar");
+const textoEnviar = document.getElementById("textoEnviar");
+
+// Elementos y modales para "Ver detalles" y "Confirmar eliminación"
+const listaServicios = document.getElementById("listaServicios");
+
+const modalDetalleEl = document.getElementById("modalDetalle");
+const modalDetalle = modalDetalleEl ? new bootstrap.Modal(modalDetalleEl) : null;
+
+const modalConfirmarEl = document.getElementById("modalConfirmarEliminar");
+const modalConfirmar = modalConfirmarEl ? new bootstrap.Modal(modalConfirmarEl) : null;
+
+const btnConfirmarEliminar = document.getElementById("btnConfirmarEliminar");
+
+// Guarda temporalmente el id del registro que se quiere eliminar
+// mientras se espera la confirmación del usuario en el modal.
+let idPendienteEliminar = null;
+
 // Array que guarda TODOS los registros. Es la única "fuente de verdad":
 // cada vez que cambia, volvemos a dibujar la lista completa a partir de él.
 let registros = [];
@@ -142,7 +162,7 @@ function actualizarContador() {
     total.textContent = registros.length;
 }
 
-// Crea el HTML (tarjeta) de UN solo registro. Esta es la "plantilla" que se
+// Crea el HTML de UN solo registro. Esta es la "plantilla" que se
 // reutiliza dentro del bucle, para no repetir bloques HTML manualmente.
 function crearElementoTarjeta(registro) {
     const columna = document.createElement("div");
@@ -171,24 +191,36 @@ function crearElementoTarjeta(registro) {
     texto.className = "mt-2";
     texto.textContent = registro.descripcion;
 
+    // Botón "Ver detalles": abre un modal con la información completa del registro
+    const botonDetalle = document.createElement("button");
+    botonDetalle.textContent = "Ver detalles";
+    botonDetalle.type = "button";
+    botonDetalle.className = "btn btn-primary btn-sm me-2";
+    botonDetalle.addEventListener("click", function () {
+        document.getElementById("detalleNombre").textContent = registro.nombre;
+        document.getElementById("detalleCorreo").textContent = registro.correo;
+        document.getElementById("detalleCategoria").textContent = registro.categoria;
+        document.getElementById("detalleDescripcion").textContent = registro.descripcion;
+        if (modalDetalle) modalDetalle.show();
+    });
+
+    // El botón "Eliminar": ya no borra directamente, pide confirmación en un modal
     const boton = document.createElement("button");
     boton.textContent = "Eliminar";
     boton.type = "button";
     boton.className = "btn btn-danger btn-sm";
 
-    // Al eliminar, quitamos el registro del array (por su id único)
-    // y volvemos a renderizar todo, en lugar de tocar el DOM "a mano".
     boton.addEventListener("click", function () {
-        registros = registros.filter(function (r) {
-            return r.id !== registro.id;
-        });
-        renderizarRegistros();
+        idPendienteEliminar = registro.id;
+        document.getElementById("nombreAEliminar").textContent = registro.nombre;
+        if (modalConfirmar) modalConfirmar.show();
     });
 
     tarjeta.appendChild(titulo);
     tarjeta.appendChild(correoTexto);
     tarjeta.appendChild(tipo);
     tarjeta.appendChild(texto);
+    tarjeta.appendChild(botonDetalle);
     tarjeta.appendChild(boton);
     columna.appendChild(tarjeta);
 
@@ -227,6 +259,78 @@ function limpiarFormulario() {
 }
 
 
+// Confirmación de eliminación desde el modal
+
+if (btnConfirmarEliminar) {
+    btnConfirmarEliminar.addEventListener("click", function () {
+        if (idPendienteEliminar !== null) {
+            registros = registros.filter(function (r) {
+                return r.id !== idPendienteEliminar;
+            });
+            renderizarRegistros();
+            mostrarMensajeExito("Registro eliminado correctamente.");
+        }
+        idPendienteEliminar = null;
+        if (modalConfirmar) modalConfirmar.hide();
+    });
+}
+
+// Servicios y Productos: contenido dinámico simulando una carga (spinner)
+
+const datosServicios = [
+    {
+        nombre: "Ropa y Accesorios de Moda",
+        categoria: "Moda",
+        descripcion: "Prendas y accesorios de emprendedores ecuatorianos, con envíos a todo el país."
+    },
+    {
+        nombre: "Tecnología y Electrónica",
+        categoria: "Tecnología",
+        descripcion: "Dispositivos y accesorios tecnológicos ofrecidos por proveedores locales confiables."
+    },
+    {
+        nombre: "Productos para el Hogar",
+        categoria: "Hogar",
+        descripcion: "Artículos de decoración, cocina y organización para renovar cada espacio de tu casa."
+    },
+    {
+        nombre: "Alimentos y Productos Locales",
+        categoria: "Alimentos",
+        descripcion: "Productos frescos y procesados elaborados por pequeños productores de distintas provincias."
+    }
+];
+
+function crearTarjetaServicio(servicio) {
+    const columna = document.createElement("div");
+    columna.className = "col-md-6 col-lg-3 mb-4";
+
+    columna.innerHTML = `
+        <div class="card h-100 text-center p-3 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">${servicio.nombre}</h5>
+                <span class="badge bg-success mb-2">${servicio.categoria}</span>
+                <p class="card-text">${servicio.descripcion}</p>
+            </div>
+        </div>
+    `;
+
+    return columna;
+}
+
+// Simula un pequeño tiempo de carga (spinner) antes de mostrar los
+// servicios, representando un proceso asincrónico típico (ej: una
+// consulta a un servidor).
+function renderizarServicios() {
+    setTimeout(function () {
+        listaServicios.innerHTML = "";
+        datosServicios.forEach(function (servicio) {
+            listaServicios.appendChild(crearTarjetaServicio(servicio));
+        });
+    }, 1200);
+}
+
+renderizarServicios();
+
 // Eventos: validación en tiempo real (input y blur)
 
 campoNombre.addEventListener("input", validarNombre);
@@ -261,20 +365,32 @@ formulario.addEventListener("submit", function (event) {
     const categoria = campoCategoria.value;
     const descripcion = campoDescripcion.value.trim();
 
-    // Guardamos el nuevo registro en el array (fuente de datos)
-    registros.push({
-        id: siguienteId++,
-        nombre: nombre,
-        correo: correo,
-        categoria: categoria,
-        descripcion: descripcion
-    });
+    // Mostramos un spinner en el botón para simular un proceso de guardado
+    btnEnviar.disabled = true;
+    spinnerEnviar.classList.remove("d-none");
+    textoEnviar.textContent = "Guardando...";
 
-    // Volvemos a dibujar toda la lista a partir del array actualizado
-    renderizarRegistros();
+    setTimeout(function () {
+        // Guardamos el nuevo registro en el array (fuente de datos)
+        registros.push({
+            id: siguienteId++,
+            nombre: nombre,
+            correo: correo,
+            categoria: categoria,
+            descripcion: descripcion
+        });
 
-    mostrarMensajeExito("Registro agregado correctamente.");
-    limpiarFormulario();
+        // Volvemos a dibujar toda la lista a partir del array actualizado
+        renderizarRegistros();
+
+        mostrarMensajeExito("Registro agregado correctamente.");
+        limpiarFormulario();
+
+        // Restauramos el botón a su estado normal
+        btnEnviar.disabled = false;
+        spinnerEnviar.classList.add("d-none");
+        textoEnviar.textContent = "Enviar Mensaje";
+    }, 900);
 });
 
 // Renderizado inicial al cargar la página (con el array vacío,
