@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block titulo %}EcuaCompras - Proveedores{% endblock %}
+
+{% block content %}
+
+<section class="container p-4">
+
+    <h2 class="text-center mb-4">Módulo de Proveedores</h2>
+
+    <p class="text-center text-muted">
+        Proveedores locales aliados de EcuaCompras (datos de ejemplo).
+    </p>
+
+    <!-- una tarjeta por cada proveedor que viene desde app.py -->
+    <div class="row">
+        {% for proveedor in proveedores %}
+        <div class="col-md-4 mb-3">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">{{ proveedor.nombre }}</h5>
+                    <p class="card-text mb-1"><strong>Rubro:</strong> {{ proveedor.rubro }}</p>
+                    <p class="card-text mb-1"><strong>Ciudad:</strong> {{ proveedor.ciudad }}</p>
+                    <p class="card-text"><strong>Contacto:</strong> {{ proveedor.contacto }}</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+</section>
+
+{% endblock %}

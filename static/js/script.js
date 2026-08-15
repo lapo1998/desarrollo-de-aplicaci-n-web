@@ -40,12 +40,10 @@ const modalConfirmar = modalConfirmarEl ? new bootstrap.Modal(modalConfirmarEl) 
 
 const btnConfirmarEliminar = document.getElementById("btnConfirmarEliminar");
 
-// Guarda temporalmente el id del registro que se quiere eliminar
-// mientras se espera la confirmación del usuario en el modal.
+// id del registro que se va a eliminar, mientras se confirma en el modal
 let idPendienteEliminar = null;
 
-// Array que guarda TODOS los registros. Es la única "fuente de verdad":
-// cada vez que cambia, volvemos a dibujar la lista completa a partir de él.
+// array con todos los registros
 let registros = [];
 
 
@@ -162,8 +160,7 @@ function actualizarContador() {
     total.textContent = registros.length;
 }
 
-// Crea el HTML de UN solo registro. Esta es la "plantilla" que se
-// reutiliza dentro del bucle, para no repetir bloques HTML manualmente.
+// crea el HTML de una tarjeta de registro
 function crearElementoTarjeta(registro) {
     const columna = document.createElement("div");
     columna.className = "col-md-6";
@@ -227,19 +224,16 @@ function crearElementoTarjeta(registro) {
     return columna;
 }
 
-// recorre el array "registros" con forEach y
-// construye la lista completa de tarjetas a partir de él.
-// Además aplica una CONDICIÓN según el estado de los datos:
-// si no hay registros, muestra un mensaje; si hay, muestra la lista.
+// vuelve a pintar toda la lista de registros
 function renderizarRegistros() {
     listaRegistros.innerHTML = "";
 
     if (registros.length === 0) {
-        // Condición: no hay datos -> mostramos mensaje de estado vacío
+        // no hay registros, mostramos el mensaje de vacío
         estadoVacio.classList.remove("d-none");
         listaRegistros.classList.add("d-none");
     } else {
-        // Condición: sí hay datos -> ocultamos el mensaje y pintamos la lista
+        // sí hay registros, ocultamos el mensaje y mostramos la lista
         estadoVacio.classList.add("d-none");
         listaRegistros.classList.remove("d-none");
 
@@ -317,9 +311,7 @@ function crearTarjetaServicio(servicio) {
     return columna;
 }
 
-// Simula un pequeño tiempo de carga (spinner) antes de mostrar los
-// servicios, representando un proceso asincrónico típico (ej: una
-// consulta a un servidor).
+// simula un tiempo de carga antes de mostrar los servicios
 function renderizarServicios() {
     setTimeout(function () {
         listaServicios.innerHTML = "";
@@ -393,6 +385,5 @@ formulario.addEventListener("submit", function (event) {
     }, 900);
 });
 
-// Renderizado inicial al cargar la página (con el array vacío,
-// esto mostrará el mensaje de "no hay registros")
+// renderizado inicial al cargar la página
 renderizarRegistros();

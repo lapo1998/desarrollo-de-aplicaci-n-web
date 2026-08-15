@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block titulo %}EcuaCompras - Inicio{% endblock %}
+
+{% block content %}
+
+<!-- Sección de bienvenida e información general -->
+<section id="inicio" class="container hero text-center p-5 m-3">
+
+    <h2>Inicio</h2>
+
+    <p>
+        Bienvenido a EcuaCompras. Esta plataforma ha sido proyectada para ofrecer una infraestructura robusta y eficiente de comercio electrónico en el país. Buscamos conectar a los comerciantes locales con soluciones tecnológicas modernas, facilitando procesos de pago intuitivos y garantizando una experiencia de navegación óptima para todos los usuarios ecuatorianos.
+    </p>
+
+    <a href="#servicios-productos" class="btn btn-success m-2">
+        Ver Productos
+    </a>
+
+    <a href="#contacto" class="btn btn-outline-success m-2">
+        Contacto
+    </a>
+
+</section>
+
+<!-- Información institucional y objetivos del proyecto -->
+<section id="quienes-somos" class="container p-3">
+
+    <h2 class="text-center mb-4">Quiénes Somos</h2>
+
+    <div class="row align-items-center">
+
+        <div class="col-md-7">
+
+            <article>
+                <p>
+                    EcuaCompras es una iniciativa tecnológica que surge en el ámbito académico con el propósito firme de dinamizar el comercio digital en las regiones ecuatorianas. El sistema se enfoca en proporcionar un espacio virtual intuitivo, seguro y de alta disponibilidad donde los emprendedores locales puedan exhibir sus catálogos de productos sin barreras técnicas complejas. A través de la implementación de metodologías ágiles de desarrollo de software y una meticulosa planeación en la arquitectura de datos, este proyecto busca optimizar el rendimiento de las transacciones en línea, adaptándose fielmente a las preferencias y necesidades del consumidor actual. Nos esforzamos por promover la inclusión digital, ofreciendo herramientas competitivas que impulsen el crecimiento económico local y demuestren el alto potencial del desarrollo de aplicaciones web en nuestra universidad.
+                </p>
+            </article>
+
+        </div>
+
+        <div class="col-md-5 text-center">
+            <!-- Imagen EcuaCompras: colócala en static/img/ecuacompras-logo.png -->
+            <img src="{{ url_for('static', filename='img/ecuacompras-logo.png') }}"
+                 alt="Mercado local impulsado por ecuacompras"
+                 class="img-fluid rounded shadow">
+        </div>
+
+    </div>
+
+</section>
+
+<!-- Servicios y productos: contenido dinámico generado desde script.js -->
+<section id="servicios-productos" class="container p-3">
+
+    <h2 class="text-center mb-4">Servicios y Productos</h2>
+
+    <div id="listaServicios" class="row">
+        <div class="text-center my-4" id="spinnerServicios">
+            <div class="spinner-border text-success" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="mt-2 text-muted">Cargando servicios destacados...</p>
+        </div>
+    </div>
+
+</section>
+
+<!-- Formulario de contacto y datos de comunicación -->
+<section id="contacto" class="container p-3">
+
+    <h2 class="text-center mb-4">Contacto</h2>
+
+    <div class="row">
+
+        <div class="col-md-6">
+
+            <!-- novalidate: dejamos toda la validación visual en manos de JS -->
+            <form id="formRegistro" novalidate>
+
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+                        <label class="form-label" for="nombre">Nombre / Título</label>
+                        <input type="text" class="form-control" id="nombre" name="nombre" required minlength="3">
+                        <div class="invalid-feedback" id="feedback-nombre"></div>
+                        <div class="valid-feedback">¡Se ve bien!</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label" for="correo">Correo Electrónico</label>
+                        <input type="email" class="form-control" id="correo" name="correo" required>
+                        <div class="invalid-feedback" id="feedback-correo"></div>
+                        <div class="valid-feedback">¡Se ve bien!</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label" for="categoria">Categoría</label>
+                        <select class="form-select" id="categoria" name="categoria" required>
+                            <option value="" selected disabled>Seleccione una categoría...</option>
+                            <option value="Hogar">Hogar</option>
+                            <option value="Tecnología">Tecnología</option>
+                            <option value="Moda">Moda</option>
+                            <option value="Alimentos">Alimentos</option>
+                            <option value="Otros">Otros</option>
+                        </select>
+                        <div class="invalid-feedback" id="feedback-categoria"></div>
+                        <div class="valid-feedback">¡Se ve bien!</div>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label" for="descripcion">Descripción</label>
+                        <textarea class="form-control" rows="4" id="descripcion" name="descripcion" required minlength="15"></textarea>
+                        <div class="invalid-feedback" id="feedback-descripcion"></div>
+                        <div class="valid-feedback">¡Se ve bien!</div>
+                    </div>
+
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-success" id="btnEnviar">
+                            <span id="spinnerEnviar" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                            <span id="textoEnviar">Enviar Mensaje</span>
+                        </button>
+                    </div>
+
+                </div>
+
+                <div id="mensaje" class="mt-3"></div>
+
+            </form>
+
+            <hr>
+
+            <h4>Registros creados</h4>
+
+            <p>
+                Total de registros:
+                <span id="total">0</span>
+            </p>
+
+            <!-- Mensaje que se muestra/oculta según si hay registros o no -->
+            <div id="estadoVacio" class="alert alert-secondary">
+                Aún no hay registros. ¡Completa el formulario para agregar el primero!
+            </div>
+
+            <div id="listaRegistros" class="row"></div>
+
+        </div>
+
+        <div class="col-md-6">
+
+            <p>
+                <a href="mailto:soporte@ecuacompras.com" class="btn btn-primary m-1">
+                    Correo Electrónico
+                </a>
+            </p>
+
+            <p><strong>Teléfono:</strong> +593 0979795604</p>
+
+            <p><strong>Dirección:</strong> Loja-cariamanga-servicios en linea</p>
+
+            <p><strong>Redes Sociales:</strong></p>
+
+            <a href="https://www.facebook.com/profile.php?id=61568956269010"
+               target="_blank"
+               class="btn btn-primary m-1">
+                Facebook
+            </a>
+
+            <a href="https://www.tiktok.com/@ecuacompras"
+               target="_blank"
+               class="btn btn-dark m-1">
+                TikTok
+            </a>
+
+        </div>
+
+    </div>
+
+</section>
+
+<section id="video-seccion" class="container text-center p-3">
+
+    <h2>Video Informativo</h2>
+
+    <iframe
+        height="450"
+        src="https://www.youtube.com/embed/kTAXXebEP-w"
+        title="CATÁLOGO DE PRODUCTOS ECUACOMPRA LINEA HOGAR"
+        frameborder="0"
+        allowfullscreen>
+    </iframe>
+
+</section>
+
+<!-- Modal: detalle de un registro -->
+<div class="modal fade" id="modalDetalle" tabindex="-1" aria-labelledby="modalDetalleLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="modalDetalleLabel">Detalle del Registro</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body text-start">
+                <p><strong>Nombre:</strong> <span id="detalleNombre"></span></p>
+                <p><strong>Correo:</strong> <span id="detalleCorreo"></span></p>
+                <p><strong>Categoría:</strong> <span id="detalleCategoria"></span></p>
+                <p><strong>Descripción:</strong> <span id="detalleDescripcion"></span></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: confirmar eliminación de un registro -->
+<div class="modal fade" id="modalConfirmarEliminar" tabindex="-1" aria-labelledby="modalConfirmarEliminarLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="modalConfirmarEliminarLabel">Confirmar eliminación</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body text-start">
+                ¿Estás seguro de que deseas eliminar el registro de <strong id="nombreAEliminar"></strong>?
+                Esta acción no se puede deshacer.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmarEliminar">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- script.js solo se necesita en esta página (maneja el formulario de contacto) -->
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+{% endblock %}
