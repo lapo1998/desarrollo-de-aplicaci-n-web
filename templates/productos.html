@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block titulo %}EcuaCompras - Productos{% endblock %}
+{% block title %}EcuaCompras - Productos{% endblock %}
 
 {% block content %}
 
@@ -9,9 +9,14 @@
     <h2 class="text-center mb-4">Módulo de Productos</h2>
 
     <p class="text-center text-muted">
-        Catálogo de ejemplo. Estos datos son fijos por ahora; más adelante vendrán de una base de datos.
     </p>
 
+    <!-- variable que viene de app.py -->
+    <p class="text-center">
+        <span class="badge bg-secondary">Total de productos: {{ total_productos }}</span>
+    </p>
+
+    <!-- tabla con los productos, una fila por producto -->
     <div class="table-responsive">
         <table class="table table-striped table-hover align-middle shadow-sm">
             <thead class="table-success">
@@ -21,6 +26,7 @@
                     <th>Categoría</th>
                     <th>Precio</th>
                     <th>Stock</th>
+                    <th>Estado</th>
                 </tr>
             </thead>
             <tbody>
@@ -28,9 +34,16 @@
                 <tr>
                     <td>{{ loop.index }}</td>
                     <td>{{ producto.nombre }}</td>
-                    <td><span class="badge bg-success">{{ producto.categoria }}</span></td>
+                    <td><span class="badge bg-success">{{ producto.categoria|upper }}</span></td>
                     <td>${{ "%.2f"|format(producto.precio) }}</td>
                     <td>{{ producto.stock }}</td>
+                    <td>
+                        {% if producto.stock == 0 %}
+                            <span class="badge bg-danger">Agotado</span>
+                        {% else %}
+                            <span class="badge bg-success">Disponible</span>
+                        {% endif %}
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
