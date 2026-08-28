@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}EcuaCompras - {{ 'Editar' if factura else 'Nueva' }} Factura{% endblock %}
+
+{% block content %}
+
+<section class="container p-4">
+
+    <!-- Título del formulario -->
+    <h2 class="text-center mb-4">
+        {{ 'Editar Factura' if factura else 'Registrar Nueva Factura' }}
+    </h2>
+
+    <!-- Mensajes del formulario -->
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+        {% if mensajes %}
+            {% for categoria, texto in mensajes %}
+                <div class="alert alert-{{ categoria }}">{{ texto }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Formulario de facturación -->
+    <form method="POST" novalidate class="mx-auto" style="max-width: 600px;">
+
+        <!-- Token de protección CSRF -->
+        {{ form.hidden_tag() }}
+
+        <!-- Campo número de factura -->
+        <div class="mb-3">
+            {{ form.numero.label(class="form-label") }}
+            {{ form.numero(class="form-control" ~ (" is-invalid" if form.numero.errors else "")) }}
+            {% for error in form.numero.errors %}
+                <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Campo cliente -->
+        <div class="mb-3">
+            {{ form.cliente.label(class="form-label") }}
+            {{ form.cliente(class="form-control" ~ (" is-invalid" if form.cliente.errors else "")) }}
+            {% for error in form.cliente.errors %}
+                <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Campo fecha -->
+        <div class="mb-3">
+            {{ form.fecha.label(class="form-label") }}
+            {{ form.fecha(class="form-control" ~ (" is-invalid" if form.fecha.errors else "")) }}
+            {% for error in form.fecha.errors %}
+                <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Campo total -->
+        <div class="mb-3">
+            {{ form.total.label(class="form-label") }}
+            {{ form.total(class="form-control" ~ (" is-invalid" if form.total.errors else ""), step="0.01") }}
+            {% for error in form.total.errors %}
+                <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Campo estado -->
+        <div class="mb-3">
+            {{ form.estado.label(class="form-label") }}
+            {{ form.estado(class="form-select" ~ (" is-invalid" if form.estado.errors else "")) }}
+            {% for error in form.estado.errors %}
+                <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Botón para guardar -->
+        {{ form.submit(class="btn btn-success w-100") }}
+
+    </form>
+
+    <!-- Regresar al listado -->
+    <div class="text-center mt-3">
+        <a href="{{ url_for('facturacion') }}" class="btn btn-outline-secondary">Volver al listado</a>
+    </div>
+
+</section>
+
+{% endblock %}

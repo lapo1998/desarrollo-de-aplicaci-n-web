@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}EcuaCompras - {{ 'Editar' if proveedor else 'Nuevo' }} Proveedor{% endblock %}
+
+{% block content %}
+
+<section class="container p-4">
+
+    <!-- Titulo del formulario -->
+    <h2 class="text-center mb-4">
+        {{ 'Editar Proveedor' if proveedor else 'Registrar Nuevo Proveedor' }}
+    </h2>
+
+    <!-- Mensajes del sistema -->
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+        {% if mensajes %}
+            {% for categoria, texto in mensajes %}
+                <div class="alert alert-{{ categoria }}">{{ texto }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Formulario de proveedor -->
+    <form method="POST" novalidate class="mx-auto" style="max-width: 600px;">
+
+        <!-- Proteccion del formulario -->
+        {{ form.hidden_tag() }}
+
+        <!-- Nombre del proveedor -->
+        <div class="mb-3">
+            {{ form.nombre.label(class="form-label") }}
+            {{ form.nombre(class="form-control" ~ (" is-invalid" if form.nombre.errors else "")) }}
+
+            <!-- Errores del campo -->
+            {% for error in form.nombre.errors %}
+                <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Rubro del proveedor -->
+        <div class="mb-3">
+            {{ form.rubro.label(class="form-label") }}
+            {{ form.rubro(class="form-select" ~ (" is-invalid" if form.rubro.errors else "")) }}
+
+            <!-- Errores del campo -->
+            {% for error in form.rubro.errors %}
+                <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Ciudad del proveedor -->
+        <div class="mb-3">
+            {{ form.ciudad.label(class="form-label") }}
+            {{ form.ciudad(class="form-control" ~ (" is-invalid" if form.ciudad.errors else "")) }}
+
+            <!-- Errores del campo -->
+            {% for error in form.ciudad.errors %}
+                <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Contacto del proveedor -->
+        <div class="mb-3">
+            {{ form.contacto.label(class="form-label") }}
+            {{ form.contacto(class="form-control" ~ (" is-invalid" if form.contacto.errors else "")) }}
+
+            <!-- Errores del campo -->
+            {% for error in form.contacto.errors %}
+                <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Boton para guardar -->
+        {{ form.submit(class="btn btn-success w-100") }}
+
+    </form>
+
+    <!-- Regresar al listado -->
+    <div class="text-center mt-3">
+        <a href="{{ url_for('proveedores') }}" class="btn btn-outline-secondary">Volver al listado</a>
+    </div>
+
+</section>
+
+{% endblock %}

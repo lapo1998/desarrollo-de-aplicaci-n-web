@@ -6,17 +6,20 @@
 
 <section class="container p-4">
 
+    <!-- Título del módulo -->
     <h2 class="text-center mb-4">Módulo de Productos</h2>
 
-    <p class="text-center text-muted">
-    </p>
-
-    <!-- variable que viene de app.py -->
+    <!-- Total de productos -->
     <p class="text-center">
         <span class="badge bg-secondary">Total de productos: {{ total_productos }}</span>
     </p>
 
-    <!-- tabla con los productos, una fila por producto -->
+    <!-- Botón para registrar un producto -->
+    <div class="text-end mb-3">
+        <a href="{{ url_for('nuevo_producto') }}" class="btn btn-success">+ Nuevo Producto</a>
+    </div>
+
+    <!-- Tabla de productos -->
     <div class="table-responsive">
         <table class="table table-striped table-hover align-middle shadow-sm">
             <thead class="table-success">
@@ -27,16 +30,23 @@
                     <th>Precio</th>
                     <th>Stock</th>
                     <th>Estado</th>
+                    <th>Acciones</th>
                 </tr>
             </thead>
+
+            <!-- Datos de los productos -->
             <tbody>
                 {% for producto in productos %}
                 <tr>
                     <td>{{ loop.index }}</td>
                     <td>{{ producto.nombre }}</td>
-                    <td><span class="badge bg-success">{{ producto.categoria|upper }}</span></td>
+                    <td>
+                        <span class="badge bg-success">{{ producto.categoria|upper }}</span>
+                    </td>
                     <td>${{ "%.2f"|format(producto.precio) }}</td>
                     <td>{{ producto.stock }}</td>
+
+                    <!-- Estado según el stock -->
                     <td>
                         {% if producto.stock == 0 %}
                             <span class="badge bg-danger">Agotado</span>
@@ -44,9 +54,15 @@
                             <span class="badge bg-success">Disponible</span>
                         {% endif %}
                     </td>
+
+                    <!-- Botón para editar -->
+                    <td>
+                        <a href="{{ url_for('editar_producto', id=loop.index0) }}" class="btn btn-sm btn-outline-primary">Editar</a>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
+
         </table>
     </div>
 
