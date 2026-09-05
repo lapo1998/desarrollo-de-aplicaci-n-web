@@ -19,7 +19,7 @@
         <a href="{{ url_for('nuevo_producto') }}" class="btn btn-success">+ Nuevo Producto</a>
     </div>
 
-    <!-- Tabla de productos -->
+    <!-- Tabla de productos (ahora viene de la base de datos SQLite) -->
     <div class="table-responsive">
         <table class="table table-striped table-hover align-middle shadow-sm">
             <thead class="table-success">
@@ -55,9 +55,9 @@
                         {% endif %}
                     </td>
 
-                    <!-- Botón para editar -->
+                    <!-- Botón para editar: usa el id real de la base de datos -->
                     <td>
-                        <a href="{{ url_for('editar_producto', id=loop.index0) }}" class="btn btn-sm btn-outline-primary">Editar</a>
+                        <a href="{{ url_for('editar_producto', id=producto.id) }}" class="btn btn-sm btn-outline-primary">Editar</a>
                     </td>
                 </tr>
                 {% endfor %}

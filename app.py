@@ -1,3 +1,5 @@
+import os
+import sqlite3
 from datetime import datetime
 
 from flask import Flask, render_template, redirect, url_for, flash
@@ -15,13 +17,40 @@ app = Flask(__name__)
 app.config["SECRET_KEY"] = "clave-secreta-ecuacompras-dev-2026"
 
 
-# Datos temporales de productos
-productos_ejemplo = [
-    {"nombre": "Juego de sábanas", "categoria": "Hogar", "precio": 25.50, "stock": 40},
-    {"nombre": "Audífonos inalámbricos", "categoria": "Tecnología", "precio": 18.99, "stock": 15},
-    {"nombre": "Camiseta artesanal", "categoria": "Moda", "precio": 12.00, "stock": 60},
-    {"nombre": "Café orgánico 500g", "categoria": "Alimentos", "precio": 6.75, "stock": 0},
-]
+# Rutas de la carpeta data y de la base de datos SQLite
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(BASE_DIR, "data")
+DB_PATH = os.path.join(DATA_DIR, "ferreteria.db")
+
+
+# Crea la carpeta data y la tabla de productos si todavía no existen
+def init_db():
+    os.makedirs(DATA_DIR, exist_ok=True)
+    conn = sqlite3.connect(DB_PATH)
+
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS productos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT NOT NULL,
+            categoria TEXT NOT NULL,
+            precio REAL NOT NULL,
+            stock INTEGER NOT NULL
+        )
+    """)
+
+    conn.commit()
+    conn.close()
+
+
+# Abre una conexión a la base de datos y permite leer columnas por nombre
+def get_db_connection():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+# Inicializa la base de datos al arrancar la aplicación
+init_db()
 
 
 # Datos temporales de clientes
@@ -70,55 +99,69 @@ def index():
     return render_template("index.html")
 
 
-# Módulo de productos
+# Módulo de productos (ahora persistido en SQLite)
 @app.route("/productos")
 def productos():
-    total_productos = len(productos_ejemplo)
+    conn = get_db_connection()
+    productos_bd = conn.execute("SELECT * FROM productos").fetchall()
+    conn.close()
+
+    total_productos = len(productos_bd)
     return render_template(
         "productos.html",
-        productos=productos_ejemplo,
+        productos=productos_bd,
         total_productos=total_productos,
     )
 
 
-# Registrar un producto
+# Registrar un producto (INSERT en la base de datos)
 @app.route("/productos/nuevo", methods=["GET", "POST"])
 def nuevo_producto():
     form = ProductoForm()
 
-    # Procesa el formulario si pasa las validaciones
+    # Solo guardamos si el formulario pasa las validaciones
     if form.validate_on_submit():
-        productos_ejemplo.append({
-            "nombre": form.nombre.data,
-            "categoria": form.categoria.data,
-            "precio": form.precio.data,
-            "stock": form.stock.data,
-        })
+        conn = get_db_connection()
+        conn.execute(
+            "INSERT INTO productos (nombre, categoria, precio, stock) VALUES (?, ?, ?, ?)",
+            (form.nombre.data, form.categoria.data, form.precio.data, form.stock.data),
+        )
+        conn.commit()
+        conn.close()
+
         flash("Producto registrado correctamente.", "success")
         return redirect(url_for("productos"))
 
     return render_template("productos_form.html", form=form, producto=None)
 
 
-# Editar un producto
+# Editar un producto (SELECT para cargar y UPDATE para guardar cambios)
 @app.route("/productos/editar/<int:id>", methods=["GET", "POST"])
 def editar_producto(id):
-    if id < 0 or id >= len(productos_ejemplo):
+    conn = get_db_connection()
+    producto = conn.execute("SELECT * FROM productos WHERE id = ?", (id,)).fetchone()
+
+    # Si el producto no existe, regresamos al listado
+    if producto is None:
+        conn.close()
         flash("El producto solicitado no existe.", "danger")
         return redirect(url_for("productos"))
 
-    producto = productos_ejemplo[id]
-    form = ProductoForm(data=producto)
+    form = ProductoForm(data=dict(producto))
 
     # Actualiza el producto si los datos son válidos
     if form.validate_on_submit():
-        producto["nombre"] = form.nombre.data
-        producto["categoria"] = form.categoria.data
-        producto["precio"] = form.precio.data
-        producto["stock"] = form.stock.data
+        conn.execute(
+            "UPDATE productos SET nombre = ?, categoria = ?, precio = ?, stock = ? WHERE id = ?",
+            (form.nombre.data, form.categoria.data, form.precio.data, form.stock.data, id),
+        )
+        conn.commit()
+        conn.close()
+
         flash("Producto actualizado correctamente.", "success")
         return redirect(url_for("productos"))
 
+    conn.close()
     return render_template("productos_form.html", form=form, producto=producto)
 
 
