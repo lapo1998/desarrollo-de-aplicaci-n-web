@@ -44,6 +44,15 @@
             {% endfor %}
         </div>
 
+        <!-- Campo proveedor (relación FK con la tabla proveedores) -->
+        <div class="mb-3">
+            {{ form.proveedor.label(class="form-label") }}
+            {{ form.proveedor(class="form-select" ~ (" is-invalid" if form.proveedor.errors else "")) }}
+            {% for error in form.proveedor.errors %}
+                <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+        </div>
+
         <!-- Campo precio -->
         <div class="mb-3">
             {{ form.precio.label(class="form-label") }}

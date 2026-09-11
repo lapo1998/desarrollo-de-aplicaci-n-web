@@ -1,7 +1,7 @@
 # Formularios de productos con Flask-WTF
 from flask_wtf import FlaskForm
 from wtforms import StringField, SelectField, FloatField, IntegerField, SubmitField
-from wtforms.validators import DataRequired, Length, NumberRange
+from wtforms.validators import DataRequired, Length, NumberRange, InputRequired
 
 
 # Formulario para registrar y editar productos
@@ -45,6 +45,14 @@ class ProductoForm(FlaskForm):
             DataRequired(message="El stock es obligatorio."),
             NumberRange(min=0, message="El stock no puede ser negativo."),
         ],
+    )
+
+    # Proveedor del producto (relación FK con la tabla proveedores)
+    # Los choices se llenan en app.py con los proveedores que hay en la BD
+    proveedor = SelectField(
+        "Proveedor",
+        coerce=int,
+        validators=[InputRequired(message="Debes seleccionar un proveedor.")],
     )
 
     # Botón para guardar el formulario

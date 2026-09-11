@@ -1,5 +1,3 @@
-import os
-import sqlite3
 from datetime import datetime
 
 from flask import Flask, render_template, redirect, url_for, flash
@@ -8,6 +6,7 @@ from forms.productos_forms import ProductoForm
 from forms.clientes_forms import ClienteForm
 from forms.proveedores_forms import ProveedorForm
 from forms.facturacion_forms import FacturaForm
+from conexion.conexion import obtener_conexion
 
 
 # Configuración principal de la aplicación
@@ -17,40 +16,15 @@ app = Flask(__name__)
 app.config["SECRET_KEY"] = "clave-secreta-ecuacompras-dev-2026"
 
 
-# Rutas de la carpeta data y de la base de datos SQLite
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(BASE_DIR, "data")
-DB_PATH = os.path.join(DATA_DIR, "ferreteria.db")
-
-
-# Crea la carpeta data y la tabla de productos si todavía no existen
-def init_db():
-    os.makedirs(DATA_DIR, exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
-
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS productos (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nombre TEXT NOT NULL,
-            categoria TEXT NOT NULL,
-            precio REAL NOT NULL,
-            stock INTEGER NOT NULL
-        )
-    """)
-
-    conn.commit()
+# Devuelve la lista de proveedores (id, nombre) para llenar el select del formulario
+def obtener_choices_proveedores():
+    conn = obtener_conexion()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id_proveedor, nombre FROM proveedores")
+    choices = cursor.fetchall()
+    cursor.close()
     conn.close()
-
-
-# Abre una conexión a la base de datos y permite leer columnas por nombre
-def get_db_connection():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-
-# Inicializa la base de datos al arrancar la aplicación
-init_db()
+    return choices
 
 
 # Datos temporales de clientes
@@ -99,11 +73,22 @@ def index():
     return render_template("index.html")
 
 
-# Módulo de productos (ahora persistido en SQLite)
+# Módulo de productos (ahora persistido en MySQL)
 @app.route("/productos")
 def productos():
-    conn = get_db_connection()
-    productos_bd = conn.execute("SELECT * FROM productos").fetchall()
+    conn = obtener_conexion()
+    cursor = conn.cursor(dictionary=True)
+
+    # JOIN con proveedores para mostrar también el nombre del proveedor
+    cursor.execute("""
+        SELECT p.id_producto, p.nombre, p.categoria, p.precio, p.stock,
+               p.id_proveedor, pr.nombre AS proveedor
+        FROM productos p
+        JOIN proveedores pr ON p.id_proveedor = pr.id_proveedor
+    """)
+    productos_bd = cursor.fetchall()
+
+    cursor.close()
     conn.close()
 
     total_productos = len(productos_bd)
@@ -118,15 +103,18 @@ def productos():
 @app.route("/productos/nuevo", methods=["GET", "POST"])
 def nuevo_producto():
     form = ProductoForm()
+    form.proveedor.choices = obtener_choices_proveedores()
 
     # Solo guardamos si el formulario pasa las validaciones
     if form.validate_on_submit():
-        conn = get_db_connection()
-        conn.execute(
-            "INSERT INTO productos (nombre, categoria, precio, stock) VALUES (?, ?, ?, ?)",
-            (form.nombre.data, form.categoria.data, form.precio.data, form.stock.data),
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO productos (nombre, categoria, precio, stock, id_proveedor) VALUES (%s, %s, %s, %s, %s)",
+            (form.nombre.data, form.categoria.data, form.precio.data, form.stock.data, form.proveedor.data),
         )
         conn.commit()
+        cursor.close()
         conn.close()
 
         flash("Producto registrado correctamente.", "success")
@@ -138,31 +126,57 @@ def nuevo_producto():
 # Editar un producto (SELECT para cargar y UPDATE para guardar cambios)
 @app.route("/productos/editar/<int:id>", methods=["GET", "POST"])
 def editar_producto(id):
-    conn = get_db_connection()
-    producto = conn.execute("SELECT * FROM productos WHERE id = ?", (id,)).fetchone()
+    conn = obtener_conexion()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM productos WHERE id_producto = %s", (id,))
+    producto = cursor.fetchone()
 
     # Si el producto no existe, regresamos al listado
     if producto is None:
+        cursor.close()
         conn.close()
         flash("El producto solicitado no existe.", "danger")
         return redirect(url_for("productos"))
 
-    form = ProductoForm(data=dict(producto))
+    form = ProductoForm(data={
+        "nombre": producto["nombre"],
+        "categoria": producto["categoria"],
+        "precio": producto["precio"],
+        "stock": producto["stock"],
+        "proveedor": producto["id_proveedor"],
+    })
+    form.proveedor.choices = obtener_choices_proveedores()
 
     # Actualiza el producto si los datos son válidos
     if form.validate_on_submit():
-        conn.execute(
-            "UPDATE productos SET nombre = ?, categoria = ?, precio = ?, stock = ? WHERE id = ?",
-            (form.nombre.data, form.categoria.data, form.precio.data, form.stock.data, id),
+        cursor.execute(
+            "UPDATE productos SET nombre = %s, categoria = %s, precio = %s, stock = %s, id_proveedor = %s WHERE id_producto = %s",
+            (form.nombre.data, form.categoria.data, form.precio.data, form.stock.data, form.proveedor.data, id),
         )
         conn.commit()
+        cursor.close()
         conn.close()
 
         flash("Producto actualizado correctamente.", "success")
         return redirect(url_for("productos"))
 
+    cursor.close()
     conn.close()
     return render_template("productos_form.html", form=form, producto=producto)
+
+
+# Eliminar un producto (DELETE en la base de datos)
+@app.route("/productos/eliminar/<int:id>", methods=["POST"])
+def eliminar_producto(id):
+    conn = obtener_conexion()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM productos WHERE id_producto = %s", (id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    flash("Producto eliminado correctamente.", "success")
+    return redirect(url_for("productos"))
 
 
 # Módulo de clientes
