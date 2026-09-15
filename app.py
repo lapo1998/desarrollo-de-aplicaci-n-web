@@ -1,19 +1,55 @@
 from datetime import datetime
 
 from flask import Flask, render_template, redirect, url_for, flash
+from flask_login import (
+    LoginManager,
+    login_user,
+    logout_user,
+    login_required,
+    current_user,
+)
+from werkzeug.security import generate_password_hash, check_password_hash
+import mysql.connector
 
 from forms.productos_forms import ProductoForm
 from forms.clientes_forms import ClienteForm
 from forms.proveedores_forms import ProveedorForm
 from forms.facturacion_forms import FacturaForm
+from forms.login_form import LoginForm
+from forms.usuario_form import UsuarioForm
 from conexion.conexion import obtener_conexion
+from models import Usuario
 
 
 # Configuración principal de la aplicación
 app = Flask(__name__)
 
-# Clave para proteger los formularios con CSRF
+# Clave para proteger los formularios con CSRF y las sesiones de login
 app.config["SECRET_KEY"] = "clave-secreta-ecuacompras-dev-2026"
+
+
+# Configuración de Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = "login"
+login_manager.login_message = "Debes iniciar sesión para acceder a esta página."
+login_manager.login_message_category = "warning"
+
+
+# Recupera el usuario desde la base de datos a partir de su id (lo pide Flask-Login)
+@login_manager.user_loader
+def load_user(user_id):
+    conn = obtener_conexion()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM usuarios WHERE id = %s", (user_id,))
+    fila = cursor.fetchone()
+    cursor.close()
+    conn.close()
+
+    if fila is None:
+        return None
+
+    return Usuario(fila["id"], fila["usuario"], fila["password"])
 
 
 # Devuelve la lista de proveedores (id, nombre) para llenar el select del formulario
@@ -73,8 +109,71 @@ def index():
     return render_template("index.html")
 
 
+# Inicio de sesión
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    form = LoginForm()
+
+    if form.validate_on_submit():
+        conn = obtener_conexion()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM usuarios WHERE usuario = %s", (form.usuario.data,))
+        fila = cursor.fetchone()
+        cursor.close()
+        conn.close()
+
+        # Nunca comparamos la contraseña escrita directo con la guardada: usamos check_password_hash
+        if fila and check_password_hash(fila["password"], form.password.data):
+            usuario = Usuario(fila["id"], fila["usuario"], fila["password"])
+            login_user(usuario)
+            flash("Sesión iniciada correctamente.", "success")
+            return redirect(url_for("index"))
+
+        flash("Usuario o contraseña incorrectos.", "danger")
+
+    return render_template("login.html", form=form)
+
+
+# Registrar un nuevo usuario del sistema
+@app.route("/registro", methods=["GET", "POST"])
+def registro():
+    form = UsuarioForm()
+
+    if form.validate_on_submit():
+        # Nunca guardamos la contraseña en texto plano: la transformamos con hash
+        password_hash = generate_password_hash(form.password.data)
+
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                "INSERT INTO usuarios (usuario, password) VALUES (%s, %s)",
+                (form.usuario.data, password_hash),
+            )
+            conn.commit()
+            flash("Usuario registrado correctamente. Ya puedes iniciar sesión.", "success")
+            return redirect(url_for("login"))
+        except mysql.connector.IntegrityError:
+            flash("Ese nombre de usuario ya existe.", "danger")
+        finally:
+            cursor.close()
+            conn.close()
+
+    return render_template("registro.html", form=form)
+
+
+# Cerrar sesión
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    flash("Sesión cerrada.", "success")
+    return redirect(url_for("login"))
+
+
 # Módulo de productos (ahora persistido en MySQL)
 @app.route("/productos")
+@login_required
 def productos():
     conn = obtener_conexion()
     cursor = conn.cursor(dictionary=True)
@@ -101,6 +200,7 @@ def productos():
 
 # Registrar un producto (INSERT en la base de datos)
 @app.route("/productos/nuevo", methods=["GET", "POST"])
+@login_required
 def nuevo_producto():
     form = ProductoForm()
     form.proveedor.choices = obtener_choices_proveedores()
@@ -125,6 +225,7 @@ def nuevo_producto():
 
 # Editar un producto (SELECT para cargar y UPDATE para guardar cambios)
 @app.route("/productos/editar/<int:id>", methods=["GET", "POST"])
+@login_required
 def editar_producto(id):
     conn = obtener_conexion()
     cursor = conn.cursor(dictionary=True)
@@ -167,6 +268,7 @@ def editar_producto(id):
 
 # Eliminar un producto (DELETE en la base de datos)
 @app.route("/productos/eliminar/<int:id>", methods=["POST"])
+@login_required
 def eliminar_producto(id):
     conn = obtener_conexion()
     cursor = conn.cursor()
@@ -181,12 +283,14 @@ def eliminar_producto(id):
 
 # Módulo de clientes
 @app.route("/clientes")
+@login_required
 def clientes():
     return render_template("clientes.html", clientes=clientes_ejemplo)
 
 
 # Registrar un cliente
 @app.route("/clientes/nuevo", methods=["GET", "POST"])
+@login_required
 def nuevo_cliente():
     form = ClienteForm()
 
@@ -206,6 +310,7 @@ def nuevo_cliente():
 
 # Editar un cliente
 @app.route("/clientes/editar/<int:id>", methods=["GET", "POST"])
+@login_required
 def editar_cliente(id):
     if id < 0 or id >= len(clientes_ejemplo):
         flash("El cliente solicitado no existe.", "danger")
@@ -228,12 +333,14 @@ def editar_cliente(id):
 
 # Módulo de proveedores
 @app.route("/proveedores")
+@login_required
 def proveedores():
     return render_template("proveedores.html", proveedores=proveedores_ejemplo)
 
 
 # Registrar un proveedor
 @app.route("/proveedores/nuevo", methods=["GET", "POST"])
+@login_required
 def nuevo_proveedor():
     form = ProveedorForm()
 
@@ -253,6 +360,7 @@ def nuevo_proveedor():
 
 # Editar un proveedor
 @app.route("/proveedores/editar/<int:id>", methods=["GET", "POST"])
+@login_required
 def editar_proveedor(id):
     if id < 0 or id >= len(proveedores_ejemplo):
         flash("El proveedor solicitado no existe.", "danger")
@@ -275,12 +383,14 @@ def editar_proveedor(id):
 
 # Módulo de facturación
 @app.route("/facturacion")
+@login_required
 def facturacion():
     return render_template("facturacion.html", facturas=facturas_ejemplo)
 
 
 # Registrar una factura
 @app.route("/facturacion/nueva", methods=["GET", "POST"])
+@login_required
 def nueva_factura():
     form = FacturaForm()
 
@@ -301,6 +411,7 @@ def nueva_factura():
 
 # Editar una factura
 @app.route("/facturacion/editar/<int:id>", methods=["GET", "POST"])
+@login_required
 def editar_factura(id):
     if id < 0 or id >= len(facturas_ejemplo):
         flash("La factura solicitada no existe.", "danger")

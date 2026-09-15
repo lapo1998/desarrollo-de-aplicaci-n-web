@@ -46,3 +46,10 @@ INSERT IGNORE INTO proveedores (id_proveedor, nombre, telefono, correo) VALUES
     (1, 'Textiles Loja', '0991111111', 'textilesloja@email.com'),
     (2, 'TecnoImport EC', '0992222222', 'ventas@tecnoimport.com'),
     (3, 'Sabores del Sur', '0993333333', 'contacto@saboresdelsur.com');
+
+-- Usuarios autorizados para ingresar al sistema (login)
+CREATE TABLE IF NOT EXISTS usuarios (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    usuario VARCHAR(50) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL
+);

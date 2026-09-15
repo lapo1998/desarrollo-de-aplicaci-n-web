@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}EcuaCompras - Iniciar sesión{% endblock %}
+
+{% block content %}
+
+<section class="container p-4">
+
+    <h2 class="text-center mb-4">Iniciar Sesión</h2>
+
+    <!-- Mensajes del sistema -->
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+        {% if mensajes %}
+            {% for categoria, texto in mensajes %}
+                <div class="alert alert-{{ categoria }}">{{ texto }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Formulario de login -->
+    <form method="POST" novalidate class="mx-auto" style="max-width: 400px;">
+
+        {{ form.hidden_tag() }}
+
+        <div class="mb-3">
+            {{ form.usuario.label(class="form-label") }}
+            {{ form.usuario(class="form-control" ~ (" is-invalid" if form.usuario.errors else "")) }}
+            {% for error in form.usuario.errors %}
+                <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <div class="mb-3">
+            {{ form.password.label(class="form-label") }}
+            {{ form.password(class="form-control" ~ (" is-invalid" if form.password.errors else "")) }}
+            {% for error in form.password.errors %}
+                <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        {{ form.submit(class="btn btn-success w-100") }}
+
+    </form>
+
+    <p class="text-center mt-3">
+        ¿No tienes cuenta? <a href="{{ url_for('registro') }}">Regístrate aquí</a>
+    </p>
+
+</section>
+
+{% endblock %}
