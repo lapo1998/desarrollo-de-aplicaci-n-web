@@ -9,7 +9,8 @@ from flask_login import (
     current_user,
 )
 from werkzeug.security import generate_password_hash, check_password_hash
-import mysql.connector
+import psycopg2
+import psycopg2.extras
 
 from forms.productos_forms import ProductoForm
 from forms.clientes_forms import ClienteForm
@@ -40,7 +41,7 @@ login_manager.login_message_category = "warning"
 @login_manager.user_loader
 def load_user(user_id):
     conn = obtener_conexion()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cursor.execute("SELECT * FROM usuarios WHERE id = %s", (user_id,))
     fila = cursor.fetchone()
     cursor.close()
@@ -70,14 +71,12 @@ clientes_ejemplo = [
     {"nombre": "Ana Suárez", "correo": "ana.suarez@email.com", "ciudad": "Quito", "telefono": "0965432198"},
 ]
 
-
-# Datos temporales de proveedores
+# Datos temporales de proveedores (solo para el módulo Proveedores, no para el select de productos)
 proveedores_ejemplo = [
     {"nombre": "Textiles Loja", "rubro": "Moda", "ciudad": "Loja", "contacto": "textilesloja@email.com"},
     {"nombre": "TecnoImport EC", "rubro": "Tecnología", "ciudad": "Quito", "contacto": "ventas@tecnoimport.com"},
     {"nombre": "Sabores del Sur", "rubro": "Alimentos", "ciudad": "Cariamanga", "contacto": "contacto@saboresdelsur.com"},
 ]
-
 
 # Datos temporales de facturación
 facturas_ejemplo = [
@@ -85,7 +84,6 @@ facturas_ejemplo = [
     {"numero": "F002", "cliente": "Carlos Jiménez", "fecha": "2026-08-05", "total": 18.99, "estado": "Pendiente"},
     {"numero": "F003", "cliente": "Ana Suárez", "fecha": "2026-08-10", "total": 32.75, "estado": "Pagada"},
 ]
-
 
 # Información general del sistema
 info_sistema = {
@@ -116,7 +114,7 @@ def login():
 
     if form.validate_on_submit():
         conn = obtener_conexion()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute("SELECT * FROM usuarios WHERE usuario = %s", (form.usuario.data,))
         fila = cursor.fetchone()
         cursor.close()
@@ -153,7 +151,8 @@ def registro():
             conn.commit()
             flash("Usuario registrado correctamente. Ya puedes iniciar sesión.", "success")
             return redirect(url_for("login"))
-        except mysql.connector.IntegrityError:
+        except psycopg2.errors.UniqueViolation:
+            conn.rollback()
             flash("Ese nombre de usuario ya existe.", "danger")
         finally:
             cursor.close()
@@ -171,12 +170,12 @@ def logout():
     return redirect(url_for("login"))
 
 
-# Módulo de productos (ahora persistido en MySQL)
+# Módulo de productos (persistido en PostgreSQL)
 @app.route("/productos")
 @login_required
 def productos():
     conn = obtener_conexion()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
     # JOIN con proveedores para mostrar también el nombre del proveedor
     cursor.execute("""
@@ -228,7 +227,7 @@ def nuevo_producto():
 @login_required
 def editar_producto(id):
     conn = obtener_conexion()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cursor.execute("SELECT * FROM productos WHERE id_producto = %s", (id,))
     producto = cursor.fetchone()
 
@@ -294,7 +293,6 @@ def clientes():
 def nuevo_cliente():
     form = ClienteForm()
 
-    # Procesa el formulario si pasa las validaciones
     if form.validate_on_submit():
         clientes_ejemplo.append({
             "nombre": form.nombre.data,
@@ -319,7 +317,6 @@ def editar_cliente(id):
     cliente = clientes_ejemplo[id]
     form = ClienteForm(data=cliente)
 
-    # Actualiza el cliente si los datos son válidos
     if form.validate_on_submit():
         cliente["nombre"] = form.nombre.data
         cliente["correo"] = form.correo.data
@@ -344,7 +341,6 @@ def proveedores():
 def nuevo_proveedor():
     form = ProveedorForm()
 
-    # Procesa el formulario si pasa las validaciones
     if form.validate_on_submit():
         proveedores_ejemplo.append({
             "nombre": form.nombre.data,
@@ -369,7 +365,6 @@ def editar_proveedor(id):
     proveedor = proveedores_ejemplo[id]
     form = ProveedorForm(data=proveedor)
 
-    # Actualiza el proveedor si los datos son válidos
     if form.validate_on_submit():
         proveedor["nombre"] = form.nombre.data
         proveedor["rubro"] = form.rubro.data
@@ -394,7 +389,6 @@ def facturacion():
 def nueva_factura():
     form = FacturaForm()
 
-    # Procesa la factura si pasa las validaciones
     if form.validate_on_submit():
         facturas_ejemplo.append({
             "numero": form.numero.data,
@@ -419,15 +413,11 @@ def editar_factura(id):
 
     factura = facturas_ejemplo[id]
 
-    # Convierte la fecha para mostrarla correctamente
     datos_iniciales = dict(factura)
-    datos_iniciales["fecha"] = datetime.strptime(
-        factura["fecha"], "%Y-%m-%d"
-    ).date()
+    datos_iniciales["fecha"] = datetime.strptime(factura["fecha"], "%Y-%m-%d").date()
 
     form = FacturaForm(data=datos_iniciales)
 
-    # Actualiza la factura si los datos son válidos
     if form.validate_on_submit():
         factura["numero"] = form.numero.data
         factura["cliente"] = form.cliente.data
