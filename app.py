@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from flask import Flask, render_template, redirect, url_for, flash
 from flask_login import (
     LoginManager,
@@ -11,6 +9,7 @@ from flask_login import (
 from werkzeug.security import generate_password_hash, check_password_hash
 import psycopg2
 import psycopg2.extras
+import psycopg2.errors
 
 from forms.productos_forms import ProductoForm
 from forms.clientes_forms import ClienteForm
@@ -57,33 +56,23 @@ def load_user(user_id):
 def obtener_choices_proveedores():
     conn = obtener_conexion()
     cursor = conn.cursor()
-    cursor.execute("SELECT id_proveedor, nombre FROM proveedores")
+    cursor.execute("SELECT id_proveedor, nombre FROM proveedores ORDER BY nombre")
     choices = cursor.fetchall()
     cursor.close()
     conn.close()
     return choices
 
 
-# Datos temporales de clientes
-clientes_ejemplo = [
-    {"nombre": "María Torres", "correo": "maria.torres@email.com", "ciudad": "Loja", "telefono": "0991234567"},
-    {"nombre": "Carlos Jiménez", "correo": "carlos.jimenez@email.com", "ciudad": "Cariamanga", "telefono": "0987654321"},
-    {"nombre": "Ana Suárez", "correo": "ana.suarez@email.com", "ciudad": "Quito", "telefono": "0965432198"},
-]
+# Devuelve la lista de clientes (id, nombre) para llenar el select de facturas
+def obtener_choices_clientes():
+    conn = obtener_conexion()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id_cliente, nombre FROM clientes ORDER BY nombre")
+    choices = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return choices
 
-# Datos temporales de proveedores (solo para el módulo Proveedores, no para el select de productos)
-proveedores_ejemplo = [
-    {"nombre": "Textiles Loja", "rubro": "Moda", "ciudad": "Loja", "contacto": "textilesloja@email.com"},
-    {"nombre": "TecnoImport EC", "rubro": "Tecnología", "ciudad": "Quito", "contacto": "ventas@tecnoimport.com"},
-    {"nombre": "Sabores del Sur", "rubro": "Alimentos", "ciudad": "Cariamanga", "contacto": "contacto@saboresdelsur.com"},
-]
-
-# Datos temporales de facturación
-facturas_ejemplo = [
-    {"numero": "F001", "cliente": "María Torres", "fecha": "2026-08-01", "total": 45.50, "estado": "Pagada"},
-    {"numero": "F002", "cliente": "Carlos Jiménez", "fecha": "2026-08-05", "total": 18.99, "estado": "Pendiente"},
-    {"numero": "F003", "cliente": "Ana Suárez", "fecha": "2026-08-10", "total": 32.75, "estado": "Pagada"},
-]
 
 # Información general del sistema
 info_sistema = {
@@ -170,7 +159,9 @@ def logout():
     return redirect(url_for("login"))
 
 
-# Módulo de productos (persistido en PostgreSQL)
+# ---------------------------------------------------------------
+# MÓDULO DE PRODUCTOS (CRUD en base de datos)
+# ---------------------------------------------------------------
 @app.route("/productos")
 @login_required
 def productos():
@@ -197,14 +188,12 @@ def productos():
     )
 
 
-# Registrar un producto (INSERT en la base de datos)
 @app.route("/productos/nuevo", methods=["GET", "POST"])
 @login_required
 def nuevo_producto():
     form = ProductoForm()
     form.proveedor.choices = obtener_choices_proveedores()
 
-    # Solo guardamos si el formulario pasa las validaciones
     if form.validate_on_submit():
         conn = obtener_conexion()
         cursor = conn.cursor()
@@ -222,7 +211,6 @@ def nuevo_producto():
     return render_template("productos_form.html", form=form, producto=None)
 
 
-# Editar un producto (SELECT para cargar y UPDATE para guardar cambios)
 @app.route("/productos/editar/<int:id>", methods=["GET", "POST"])
 @login_required
 def editar_producto(id):
@@ -231,7 +219,6 @@ def editar_producto(id):
     cursor.execute("SELECT * FROM productos WHERE id_producto = %s", (id,))
     producto = cursor.fetchone()
 
-    # Si el producto no existe, regresamos al listado
     if producto is None:
         cursor.close()
         conn.close()
@@ -247,7 +234,6 @@ def editar_producto(id):
     })
     form.proveedor.choices = obtener_choices_proveedores()
 
-    # Actualiza el producto si los datos son válidos
     if form.validate_on_submit():
         cursor.execute(
             "UPDATE productos SET nombre = %s, categoria = %s, precio = %s, stock = %s, id_proveedor = %s WHERE id_producto = %s",
@@ -265,169 +251,324 @@ def editar_producto(id):
     return render_template("productos_form.html", form=form, producto=producto)
 
 
-# Eliminar un producto (DELETE en la base de datos)
 @app.route("/productos/eliminar/<int:id>", methods=["POST"])
 @login_required
 def eliminar_producto(id):
     conn = obtener_conexion()
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM productos WHERE id_producto = %s", (id,))
-    conn.commit()
-    cursor.close()
-    conn.close()
-
-    flash("Producto eliminado correctamente.", "success")
+    try:
+        cursor.execute("DELETE FROM productos WHERE id_producto = %s", (id,))
+        conn.commit()
+        flash("Producto eliminado correctamente.", "success")
+    except psycopg2.errors.ForeignKeyViolation:
+        conn.rollback()
+        flash("No se puede eliminar: el producto está siendo usado en otro registro.", "danger")
+    finally:
+        cursor.close()
+        conn.close()
     return redirect(url_for("productos"))
 
 
-# Módulo de clientes
+# ---------------------------------------------------------------
+# MÓDULO DE CLIENTES (CRUD en base de datos)
+# ---------------------------------------------------------------
 @app.route("/clientes")
 @login_required
 def clientes():
-    return render_template("clientes.html", clientes=clientes_ejemplo)
+    conn = obtener_conexion()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor.execute(
+        "SELECT id_cliente, nombre, cedula, correo, telefono FROM clientes ORDER BY id_cliente"
+    )
+    clientes_bd = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return render_template("clientes.html", clientes=clientes_bd)
 
 
-# Registrar un cliente
 @app.route("/clientes/nuevo", methods=["GET", "POST"])
 @login_required
 def nuevo_cliente():
     form = ClienteForm()
 
     if form.validate_on_submit():
-        clientes_ejemplo.append({
-            "nombre": form.nombre.data,
-            "correo": form.correo.data,
-            "ciudad": form.ciudad.data,
-            "telefono": form.telefono.data,
-        })
-        flash("Cliente registrado correctamente.", "success")
-        return redirect(url_for("clientes"))
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                "INSERT INTO clientes (nombre, cedula, telefono, correo) VALUES (%s, %s, %s, %s)",
+                (form.nombre.data, form.cedula.data, form.telefono.data, form.correo.data),
+            )
+            conn.commit()
+            flash("Cliente registrado correctamente.", "success")
+            return redirect(url_for("clientes"))
+        except psycopg2.errors.UniqueViolation:
+            conn.rollback()
+            flash("Ya existe un cliente con esos datos.", "danger")
+        finally:
+            cursor.close()
+            conn.close()
 
     return render_template("clientes_form.html", form=form, cliente=None)
 
 
-# Editar un cliente
 @app.route("/clientes/editar/<int:id>", methods=["GET", "POST"])
 @login_required
 def editar_cliente(id):
-    if id < 0 or id >= len(clientes_ejemplo):
+    conn = obtener_conexion()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor.execute("SELECT * FROM clientes WHERE id_cliente = %s", (id,))
+    cliente = cursor.fetchone()
+    cursor.close()
+    conn.close()
+
+    if cliente is None:
         flash("El cliente solicitado no existe.", "danger")
         return redirect(url_for("clientes"))
 
-    cliente = clientes_ejemplo[id]
-    form = ClienteForm(data=cliente)
+    form = ClienteForm(data=dict(cliente))
 
     if form.validate_on_submit():
-        cliente["nombre"] = form.nombre.data
-        cliente["correo"] = form.correo.data
-        cliente["ciudad"] = form.ciudad.data
-        cliente["telefono"] = form.telefono.data
-        flash("Cliente actualizado correctamente.", "success")
-        return redirect(url_for("clientes"))
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                "UPDATE clientes SET nombre = %s, cedula = %s, telefono = %s, correo = %s WHERE id_cliente = %s",
+                (form.nombre.data, form.cedula.data, form.telefono.data, form.correo.data, id),
+            )
+            conn.commit()
+            flash("Cliente actualizado correctamente.", "success")
+            return redirect(url_for("clientes"))
+        except psycopg2.errors.UniqueViolation:
+            conn.rollback()
+            flash("Ya existe un cliente con esos datos.", "danger")
+        finally:
+            cursor.close()
+            conn.close()
 
     return render_template("clientes_form.html", form=form, cliente=cliente)
 
 
-# Módulo de proveedores
+@app.route("/clientes/eliminar/<int:id>", methods=["POST"])
+@login_required
+def eliminar_cliente(id):
+    conn = obtener_conexion()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("DELETE FROM clientes WHERE id_cliente = %s", (id,))
+        conn.commit()
+        flash("Cliente eliminado correctamente.", "success")
+    except psycopg2.errors.ForeignKeyViolation:
+        conn.rollback()
+        flash("No se puede eliminar: el cliente tiene facturas asociadas.", "danger")
+    finally:
+        cursor.close()
+        conn.close()
+    return redirect(url_for("clientes"))
+
+
+# ---------------------------------------------------------------
+# MÓDULO DE PROVEEDORES (CRUD en base de datos)
+# ---------------------------------------------------------------
 @app.route("/proveedores")
 @login_required
 def proveedores():
-    return render_template("proveedores.html", proveedores=proveedores_ejemplo)
+    conn = obtener_conexion()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor.execute(
+        "SELECT id_proveedor, nombre, telefono, correo FROM proveedores ORDER BY id_proveedor"
+    )
+    proveedores_bd = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return render_template("proveedores.html", proveedores=proveedores_bd)
 
 
-# Registrar un proveedor
 @app.route("/proveedores/nuevo", methods=["GET", "POST"])
 @login_required
 def nuevo_proveedor():
     form = ProveedorForm()
 
     if form.validate_on_submit():
-        proveedores_ejemplo.append({
-            "nombre": form.nombre.data,
-            "rubro": form.rubro.data,
-            "ciudad": form.ciudad.data,
-            "contacto": form.contacto.data,
-        })
-        flash("Proveedor registrado correctamente.", "success")
-        return redirect(url_for("proveedores"))
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                "INSERT INTO proveedores (nombre, telefono, correo) VALUES (%s, %s, %s)",
+                (form.nombre.data, form.telefono.data, form.correo.data),
+            )
+            conn.commit()
+            flash("Proveedor registrado correctamente.", "success")
+            return redirect(url_for("proveedores"))
+        except psycopg2.errors.UniqueViolation:
+            conn.rollback()
+            flash("Ya existe un proveedor con esos datos.", "danger")
+        finally:
+            cursor.close()
+            conn.close()
 
     return render_template("proveedores_form.html", form=form, proveedor=None)
 
 
-# Editar un proveedor
 @app.route("/proveedores/editar/<int:id>", methods=["GET", "POST"])
 @login_required
 def editar_proveedor(id):
-    if id < 0 or id >= len(proveedores_ejemplo):
+    conn = obtener_conexion()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor.execute("SELECT * FROM proveedores WHERE id_proveedor = %s", (id,))
+    proveedor = cursor.fetchone()
+    cursor.close()
+    conn.close()
+
+    if proveedor is None:
         flash("El proveedor solicitado no existe.", "danger")
         return redirect(url_for("proveedores"))
 
-    proveedor = proveedores_ejemplo[id]
-    form = ProveedorForm(data=proveedor)
+    form = ProveedorForm(data=dict(proveedor))
 
     if form.validate_on_submit():
-        proveedor["nombre"] = form.nombre.data
-        proveedor["rubro"] = form.rubro.data
-        proveedor["ciudad"] = form.ciudad.data
-        proveedor["contacto"] = form.contacto.data
-        flash("Proveedor actualizado correctamente.", "success")
-        return redirect(url_for("proveedores"))
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                "UPDATE proveedores SET nombre = %s, telefono = %s, correo = %s WHERE id_proveedor = %s",
+                (form.nombre.data, form.telefono.data, form.correo.data, id),
+            )
+            conn.commit()
+            flash("Proveedor actualizado correctamente.", "success")
+            return redirect(url_for("proveedores"))
+        except psycopg2.errors.UniqueViolation:
+            conn.rollback()
+            flash("Ya existe un proveedor con esos datos.", "danger")
+        finally:
+            cursor.close()
+            conn.close()
 
     return render_template("proveedores_form.html", form=form, proveedor=proveedor)
 
 
-# Módulo de facturación
+@app.route("/proveedores/eliminar/<int:id>", methods=["POST"])
+@login_required
+def eliminar_proveedor(id):
+    conn = obtener_conexion()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("DELETE FROM proveedores WHERE id_proveedor = %s", (id,))
+        conn.commit()
+        flash("Proveedor eliminado correctamente.", "success")
+    except psycopg2.errors.ForeignKeyViolation:
+        conn.rollback()
+        flash("No se puede eliminar: el proveedor tiene productos asociados.", "danger")
+    finally:
+        cursor.close()
+        conn.close()
+    return redirect(url_for("proveedores"))
+
+
+# ---------------------------------------------------------------
+# MÓDULO DE FACTURACIÓN (CRUD en base de datos, relacionado con clientes)
+# ---------------------------------------------------------------
 @app.route("/facturacion")
 @login_required
 def facturacion():
-    return render_template("facturacion.html", facturas=facturas_ejemplo)
+    conn = obtener_conexion()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    # JOIN con clientes para mostrar el nombre del cliente de cada factura
+    cursor.execute("""
+        SELECT f.id_factura, f.numero, f.fecha, f.total, f.estado,
+               f.id_cliente, c.nombre AS cliente
+        FROM facturas f
+        JOIN clientes c ON f.id_cliente = c.id_cliente
+        ORDER BY f.id_factura
+    """)
+    facturas_bd = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return render_template("facturacion.html", facturas=facturas_bd)
 
 
-# Registrar una factura
 @app.route("/facturacion/nueva", methods=["GET", "POST"])
 @login_required
 def nueva_factura():
     form = FacturaForm()
+    form.id_cliente.choices = obtener_choices_clientes()
+
+    # Sin clientes no se puede facturar
+    if not form.id_cliente.choices:
+        flash("Primero debes registrar al menos un cliente.", "warning")
+        return redirect(url_for("clientes"))
 
     if form.validate_on_submit():
-        facturas_ejemplo.append({
-            "numero": form.numero.data,
-            "cliente": form.cliente.data,
-            "fecha": form.fecha.data.strftime("%Y-%m-%d"),
-            "total": form.total.data,
-            "estado": form.estado.data,
-        })
-        flash("Factura registrada correctamente.", "success")
-        return redirect(url_for("facturacion"))
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                "INSERT INTO facturas (numero, id_cliente, fecha, total, estado) VALUES (%s, %s, %s, %s, %s)",
+                (form.numero.data, form.id_cliente.data, form.fecha.data, form.total.data, form.estado.data),
+            )
+            conn.commit()
+            flash("Factura registrada correctamente.", "success")
+            return redirect(url_for("facturacion"))
+        except psycopg2.errors.UniqueViolation:
+            conn.rollback()
+            flash("Ya existe una factura con ese número.", "danger")
+        finally:
+            cursor.close()
+            conn.close()
 
     return render_template("facturacion_form.html", form=form, factura=None)
 
 
-# Editar una factura
 @app.route("/facturacion/editar/<int:id>", methods=["GET", "POST"])
 @login_required
 def editar_factura(id):
-    if id < 0 or id >= len(facturas_ejemplo):
+    conn = obtener_conexion()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor.execute("SELECT * FROM facturas WHERE id_factura = %s", (id,))
+    factura = cursor.fetchone()
+    cursor.close()
+    conn.close()
+
+    if factura is None:
         flash("La factura solicitada no existe.", "danger")
         return redirect(url_for("facturacion"))
 
-    factura = facturas_ejemplo[id]
-
-    datos_iniciales = dict(factura)
-    datos_iniciales["fecha"] = datetime.strptime(factura["fecha"], "%Y-%m-%d").date()
-
-    form = FacturaForm(data=datos_iniciales)
+    form = FacturaForm(data=dict(factura))
+    form.id_cliente.choices = obtener_choices_clientes()
 
     if form.validate_on_submit():
-        factura["numero"] = form.numero.data
-        factura["cliente"] = form.cliente.data
-        factura["fecha"] = form.fecha.data.strftime("%Y-%m-%d")
-        factura["total"] = form.total.data
-        factura["estado"] = form.estado.data
-        flash("Factura actualizada correctamente.", "success")
-        return redirect(url_for("facturacion"))
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                "UPDATE facturas SET numero = %s, id_cliente = %s, fecha = %s, total = %s, estado = %s WHERE id_factura = %s",
+                (form.numero.data, form.id_cliente.data, form.fecha.data, form.total.data, form.estado.data, id),
+            )
+            conn.commit()
+            flash("Factura actualizada correctamente.", "success")
+            return redirect(url_for("facturacion"))
+        except psycopg2.errors.UniqueViolation:
+            conn.rollback()
+            flash("Ya existe una factura con ese número.", "danger")
+        finally:
+            cursor.close()
+            conn.close()
 
     return render_template("facturacion_form.html", form=form, factura=factura)
+
+
+@app.route("/facturacion/eliminar/<int:id>", methods=["POST"])
+@login_required
+def eliminar_factura(id):
+    conn = obtener_conexion()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM facturas WHERE id_factura = %s", (id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    flash("Factura eliminada correctamente.", "success")
+    return redirect(url_for("facturacion"))
 
 
 # Inicia la aplicación

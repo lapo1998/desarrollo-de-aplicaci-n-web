@@ -16,21 +16,21 @@ class ClienteForm(FlaskForm):
         ],
     )
 
+    # Cédula ecuatoriana (10 dígitos)
+    cedula = StringField(
+        "Cédula",
+        validators=[
+            DataRequired(message="La cédula es obligatoria."),
+            Regexp(r"^\d{10}$", message="La cédula debe tener exactamente 10 dígitos."),
+        ],
+    )
+
     # Correo electrónico del cliente
     correo = StringField(
         "Correo electrónico",
         validators=[
             DataRequired(message="El correo electrónico es obligatorio."),
             Email(message="Ingresa un correo electrónico válido."),
-        ],
-    )
-
-    # Ciudad del cliente
-    ciudad = StringField(
-        "Ciudad",
-        validators=[
-            DataRequired(message="La ciudad es obligatoria."),
-            Length(min=3, max=60, message="La ciudad debe tener entre 3 y 60 caracteres."),
         ],
     )
 

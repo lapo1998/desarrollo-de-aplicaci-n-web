@@ -1,7 +1,7 @@
 # Formularios de proveedores con Flask-WTF
 from flask_wtf import FlaskForm
-from wtforms import StringField, SelectField, SubmitField
-from wtforms.validators import DataRequired, Length, Email
+from wtforms import StringField, SubmitField
+from wtforms.validators import DataRequired, Length, Email, Regexp
 
 
 # Formulario para registrar y editar proveedores
@@ -11,39 +11,30 @@ class ProveedorForm(FlaskForm):
     nombre = StringField(
         "Nombre del proveedor",
         validators=[
-            DataRequired(message="El nombre del proveedor es obligatorio."),
+            DataRequired(message="El nombre es obligatorio."),
             Length(min=3, max=80, message="El nombre debe tener entre 3 y 80 caracteres."),
         ],
     )
 
-    # Rubro al que pertenece el proveedor
-    rubro = SelectField(
-        "Rubro",
-        choices=[
-            ("Hogar", "Hogar"),
-            ("Tecnología", "Tecnología"),
-            ("Moda", "Moda"),
-            ("Alimentos", "Alimentos"),
-            ("Otros", "Otros"),
-        ],
-        validators=[DataRequired(message="Debes seleccionar un rubro.")],
-    )
-
-    # Ciudad del proveedor
-    ciudad = StringField(
-        "Ciudad",
+    # Teléfono con formato ecuatoriano
+    telefono = StringField(
+        "Teléfono",
         validators=[
-            DataRequired(message="La ciudad es obligatoria."),
-            Length(min=3, max=60, message="La ciudad debe tener entre 3 y 60 caracteres."),
+            DataRequired(message="El teléfono es obligatorio."),
+            Regexp(
+                r"^0\d{9}$",
+                message="El teléfono debe tener 10 dígitos y empezar con 0 (ej: 0991234567).",
+            ),
         ],
     )
 
-    # Correo de contacto
-    contacto = StringField(
-        "Correo de contacto",
+    # Correo electrónico del proveedor
+    correo = StringField(
+        "Correo electrónico",
         validators=[
-            DataRequired(message="El contacto es obligatorio."),
+            DataRequired(message="El correo electrónico es obligatorio."),
             Email(message="Ingresa un correo electrónico válido."),
+            Length(max=120, message="El correo no puede superar los 120 caracteres."),
         ],
     )
 
